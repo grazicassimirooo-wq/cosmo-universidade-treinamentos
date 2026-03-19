@@ -207,5 +207,27 @@
             }
         }
     </script>
-</body>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB1rc6WLlLHvdizZmQB-FBzeAmbrz0jRFs",
+        authDomain: "cosmo-universidade.firebaseapp.com",
+        projectId: "cosmo-universidade",
+        storageBucket: "cosmo-universidade.firebasestorage.app",
+        messagingSenderId: "712049564091",
+        appId: "1:712049564091:web:b7dc33e1978c0dec150c9e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Se o usuário NÃO estiver logado, manda ele para a página de login
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            window.location.href = "login.html";
+        }
+    });
+</script></body>
 </html>
