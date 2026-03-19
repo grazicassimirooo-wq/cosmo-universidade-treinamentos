@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Cosmo Universidade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; }
+    </style>
+</head>
+<body class="text-white flex items-center justify-center h-screen p-4">
+    <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md border-t-4 border-t-indigo-500">
+        <h1 class="text-3xl font-bold text-center mb-2 text-indigo-400">Cosmo</h1>
+        <p class="text-slate-400 text-center mb-8 font-light text-sm uppercase tracking-widest">Treinamentos & Web</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">E-mail</label>
+                <input type="email" id="email" placeholder="Digite seu e-mail" class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:border-indigo-500 transition-all">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">Senha</label>
+                <input type="password" id="password" placeholder="••••••••" class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:border-indigo-500 transition-all">
+            </div>
+            <button onclick="fazerLogin()" id="btnLogin" class="w-full bg-indigo-600 hover:bg-indigo-500 p-3 rounded-lg font-bold transition-all shadow-lg shadow-indigo-500/20 mt-4">
+                Entrar no Sistema
+            </button>
+        </div>
+        <p id="msg" class="text-red-400 text-sm mt-6 text-center h-4"></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Sua configuração que pegamos no Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1rc6WLlLHvdizZmQB-FBzeAmbrz0jRFs",
+            authDomain: "cosmo-universidade.firebaseapp.com",
+            projectId: "cosmo-universidade",
+            storageBucket: "cosmo-universidade.firebasestorage.app",
+            messagingSenderId: "712049564091",
+            appId: "1:712049564091:web:b7dc33e1978c0dec150c9e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        window.fazerLogin = function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msg = document.getElementById('msg');
+            const btn = document.getElementById('btnLogin');
+
+            if(!email || !password) {
+                msg.innerText = "Preencha todos os campos!";
+                return;
+            }
+
+            btn.innerText = "Verificando...";
+            btn.disabled = true;
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    // Se o login der certo, ele manda para a página inicial
+                    window.location.href = "index.html"; 
+                })
+                .catch((error) => {
+                    msg.innerText = "E-mail ou senha incorretos!";
+                    btn.innerText = "Entrar no Sistema";
+                    btn.disabled = false;
+                    console.error(error);
+                });
+        }
+    </script>
+</body>
+</html>
