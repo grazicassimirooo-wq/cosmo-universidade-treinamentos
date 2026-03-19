@@ -11,35 +11,42 @@
     <nav class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-2xl">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">C</div>
-                <h1 class="text-xl font-bold text-white tracking-tight">COSMO <span class="text-indigo-400 font-light">UNIVERSIDADE</span></h1>
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold">C</div>
+                <h1 class="text-xl font-bold tracking-tight text-white">COSMO <span class="text-indigo-400 font-light text-sm uppercase">Universidade</span></h1>
             </div>
             <button onclick="sair()" class="bg-slate-800 hover:bg-red-500 hover:text-white text-slate-300 px-4 py-2 rounded-xl text-sm font-semibold transition-all border border-slate-700">
-                Sair do Sistema
+                Sair
             </button>
         </div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-6">
         
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 mb-8 shadow-xl">
-            <h2 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4">Nova Atualização</h2>
-            <textarea id="textoPost" placeholder="O que você quer compartilhar com a equipe hoje?" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-indigo-500 mb-4 h-28 resize-none transition-all"></textarea>
-            <button onclick="postar()" id="btnPostar" class="w-full bg-indigo-600 hover:bg-indigo-500 p-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/30 active:scale-95">
-                Publicar no Feed 🚀
+        <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 mb-8 shadow-xl">
+            <h2 class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4">Novo Conteúdo</h2>
+            
+            <textarea id="textoPost" placeholder="O que vamos treinar hoje?" class="w-full bg-slate-800 border border-slate-700 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-500 mb-4 h-24 resize-none"></textarea>
+            
+            <div class="flex items-center gap-3 mb-4">
+                <button onclick="document.getElementById('inputFoto').click()" class="bg-slate-800 p-3 rounded-xl border border-slate-700 hover:text-indigo-400 transition-all">
+                    📸 <span class="text-xs ml-2">Incluir Print/Foto</span>
+                </button>
+                <input type="file" id="inputFoto" class="hidden" accept="image/*">
+                <span id="nomeArquivo" class="text-[10px] text-slate-500 italic">Nenhum arquivo...</span>
+            </div>
+
+            <div id="previewArea" class="hidden mb-4 relative">
+                <img id="imgPreview" class="rounded-xl w-full max-h-60 object-cover border border-slate-700">
+                <button onclick="limparFoto()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs">✕</button>
+            </div>
+
+            <button onclick="postar()" id="btnPostar" class="w-full bg-indigo-600 hover:bg-indigo-500 p-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20">
+                Publicar Agora 🚀
             </button>
         </div>
 
-        <div class="flex items-center gap-2 mb-4">
-            <div class="h-[1px] bg-slate-800 flex-grow"></div>
-            <span class="text-xs text-slate-500 font-bold uppercase tracking-widest">Feed de Treinamentos</span>
-            <div class="h-[1px] bg-slate-800 flex-grow"></div>
-        </div>
-
-        <div id="feed" class="space-y-4">
-            <div class="text-center py-10">
-                <p class="text-slate-500 animate-pulse">Sincronizando com a base de dados...</p>
-            </div>
+        <div id="feed" class="space-y-6">
+            <p class="text-center text-slate-600 animate-pulse">Carregando universidade...</p>
         </div>
 
     </main>
@@ -47,9 +54,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Sua configuração oficial
         const firebaseConfig = {
             apiKey: "AIzaSyB1rc6WLlLHvdizZmQB-FBzeAmbrz0jRFs",
             authDomain: "cosmo-universidade.firebaseapp.com",
@@ -63,69 +69,81 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 1. SEGURANÇA: Se não estiver logado, tchau tchau!
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = "login.html";
+        let fotoBase64 = "";
+
+        // Verificação de Login
+        onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "login.html"; });
+        window.sair = () => signOut(auth).then(() => window.location.href = "login.html");
+
+        // Lógica de Seleção de Foto (O Jeitinho!)
+        const input = document.getElementById('inputFoto');
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('nomeArquivo').innerText = file.name;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    fotoBase64 = event.target.result; // Aqui vira texto!
+                    document.getElementById('imgPreview').src = fotoBase64;
+                    document.getElementById('previewArea').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
             }
         });
 
-        // 2. FUNÇÃO SAIR (Desloga e volta pra porta)
-        window.sair = function() {
-            signOut(auth).then(() => {
-                window.location.href = "login.html";
-            });
-        }
+        window.limparFoto = () => {
+            fotoBase64 = "";
+            input.value = "";
+            document.getElementById('previewArea').classList.add('hidden');
+            document.getElementById('nomeArquivo').innerText = "Nenhum arquivo...";
+        };
 
-        // 3. FUNÇÃO POSTAR (Grava no Google)
-        window.postar = async function() {
+        // Postar (Tudo vai pro Firestore como texto)
+        window.postar = async () => {
             const texto = document.getElementById('textoPost').value;
-            if(!texto.trim()) return;
+            if (!texto && !fotoBase64) return;
 
             const btn = document.getElementById('btnPostar');
-            btn.disabled = true;
-            btn.innerText = "Enviando para a nuvem...";
+            btn.disabled = true; btn.innerText = "Sincronizando...";
 
             try {
                 await addDoc(collection(db, "feed"), {
                     mensagem: texto,
+                    imagem: fotoBase64, // O "texto" da imagem vai aqui
                     data: serverTimestamp()
                 });
                 document.getElementById('textoPost').value = "";
-            } catch (e) {
-                alert("Erro ao publicar! Verifique se ativou o Modo de Teste no Firestore.");
-                console.error(e);
-            }
-            btn.disabled = false;
-            btn.innerText = "Publicar no Feed 🚀";
-        }
+                limparFoto();
+            } catch (e) { alert("Erro ao postar! Tente uma imagem menor (print)."); }
+            
+            btn.disabled = false; btn.innerText = "Publicar Agora 🚀";
+        };
 
-        // 4. LER O FEED EM TEMPO REAL (A mágica acontece aqui)
+        // Excluir
+        window.excluir = async (id) => {
+            if (confirm("Deseja apagar esse treinamento?")) await deleteDoc(doc(db, "feed", id));
+        };
+
+        // Feed em Tempo Real
         const q = query(collection(db, "feed"), orderBy("data", "desc"));
-        onSnapshot(q, (snapshot) => {
+        onSnapshot(q, (snap) => {
             const feedDiv = document.getElementById('feed');
             feedDiv.innerHTML = "";
-            
-            snapshot.forEach((doc) => {
-                const post = doc.data();
-                // Criando o cartão da mensagem
+            snap.forEach((d) => {
+                const p = d.data();
                 const card = `
-                    <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-sm transition-all hover:border-indigo-500/30 group">
-                        <p class="text-slate-200 leading-relaxed">${post.mensagem}</p>
-                        <div class="flex justify-between items-center mt-4">
-                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Universidade Cosmo • Feed</span>
-                            <span class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded">MENSAGEM AO VIVO</span>
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg group">
+                        <div class="flex justify-between mb-3">
+                            <span class="text-[9px] text-slate-600 font-bold uppercase tracking-tighter">Cosmo Feed</span>
+                            <button onclick="excluir('${d.id}')" class="text-slate-800 group-hover:text-red-500 transition-all text-xs">🗑️</button>
                         </div>
+                        ${p.imagem ? `<img src="${p.imagem}" class="w-full rounded-2xl mb-4 border border-slate-800">` : ''}
+                        <p class="text-slate-200 text-sm leading-relaxed">${p.mensagem}</p>
                     </div>
                 `;
                 feedDiv.innerHTML += card;
             });
-
-            if(snapshot.empty) {
-                feedDiv.innerHTML = "<p class='text-center text-slate-600 py-10'>Ainda não temos treinamentos postados.</p>";
-            }
-        }, (error) => {
-            feedDiv.innerHTML = "<p class='text-red-400 text-center text-sm'>Erro de conexão com o Banco de Dados.</p>";
+            if(snap.empty) feedDiv.innerHTML = "<p class='text-center text-slate-700 text-xs'>Nenhum post ainda.</p>";
         });
     </script>
 </body>
