@@ -11,53 +11,52 @@
     <nav class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-2xl">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold">C</div>
-                <h1 class="text-xl font-bold tracking-tight text-white">COSMO <span class="text-indigo-400 font-light text-sm uppercase">Universidade</span></h1>
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold shadow-[0_0_15px_rgba(79,70,229,0.4)]">C</div>
+                <h1 class="text-xl font-bold tracking-tight text-white italic">COSMO <span class="text-indigo-400 font-light text-sm uppercase tracking-widest ml-1">Universidade</span></h1>
             </div>
-            <button onclick="sair()" class="bg-slate-800 hover:bg-red-500 hover:text-white text-slate-300 px-4 py-2 rounded-xl text-sm font-semibold transition-all border border-slate-700">
+            <button onclick="sair()" class="bg-slate-800 hover:bg-red-500 hover:text-white text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-700 uppercase tracking-tighter">
                 Sair
             </button>
         </div>
     </nav>
 
-    <main class="max-w-2xl mx-auto p-6">
-        
-        <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 mb-8 shadow-xl">
-            <h2 class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4">Novo Conteúdo</h2>
+    <main class="max-w-3xl mx-auto p-6">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-2xl mb-12">
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Novo Log de Bordo</h2>
+            <textarea id="texto" placeholder="O que vamos treinar hoje?" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-2xl text-slate-200 focus:outline-none focus:border-indigo-500 transition-all resize-none mb-4 h-24"></textarea>
             
-            <textarea id="textoPost" placeholder="O que vamos treinar hoje?" class="w-full bg-slate-800 border border-slate-700 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-500 mb-4 h-24 resize-none"></textarea>
-            
-            <div class="flex items-center gap-3 mb-4">
-                <button onclick="document.getElementById('inputFoto').click()" class="bg-slate-800 p-3 rounded-xl border border-slate-700 hover:text-indigo-400 transition-all">
-                    📸 <span class="text-xs ml-2">Incluir Print/Foto</span>
+            <div class="flex justify-between items-center gap-4">
+                <input type="file" id="foto" accept="image/*" class="hidden" onchange="previewImagem(this)">
+                <label for="foto" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border border-slate-700">
+                    📷 Anexar Foto
+                </label>
+                <button onclick="postar()" id="btnPostar" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-2 rounded-xl text-xs font-bold transition-all shadow-lg uppercase tracking-widest">
+                    Publicar
                 </button>
-                <input type="file" id="inputFoto" class="hidden" accept="image/*">
-                <span id="nomeArquivo" class="text-[10px] text-slate-500 italic">Nenhum arquivo...</span>
             </div>
-
-            <div id="previewArea" class="hidden mb-4 relative">
-                <img id="imgPreview" class="rounded-xl w-full max-h-60 object-cover border border-slate-700">
-                <button onclick="limparFoto()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs">✕</button>
+            <div id="previewContainer" class="hidden mt-4">
+                <img id="imgPreview" class="w-20 h-20 object-cover rounded-lg border border-slate-700">
             </div>
-
-            <button onclick="postar()" id="btnPostar" class="w-full bg-indigo-600 hover:bg-indigo-500 p-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20">
-                Publicar Agora 🚀
-            </button>
         </div>
 
-        <div id="feed" class="space-y-6">
-            <p class="text-center text-slate-600 animate-pulse">Carregando universidade...</p>
+        <div class="relative">
+            <div class="absolute left-4 top-0 h-full w-0.5 bg-slate-800/50"></div>
+            
+            <div id="feed" class="space-y-10">
+                </div>
         </div>
-
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
-            apiKey: "AIzaSyB1rc6WLlLHvdizZmQB-FBzeAmbrz0jRFs",
+            apiKey: "AIzaSyBm...", // Substitua pela sua chave real
             authDomain: "cosmo-universidade.firebaseapp.com",
             projectId: "cosmo-universidade",
             storageBucket: "cosmo-universidade.firebasestorage.app",
@@ -69,81 +68,108 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // VERIFICAÇÃO DE LOGIN
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "login.html";
+        });
+
+        window.sair = () => signOut(auth);
+
+        // LÓGICA DE IMAGEM
         let fotoBase64 = "";
-
-        // Verificação de Login
-        onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "login.html"; });
-        window.sair = () => signOut(auth).then(() => window.location.href = "login.html");
-
-        // Lógica de Seleção de Foto (O Jeitinho!)
-        const input = document.getElementById('inputFoto');
-        input.addEventListener('change', (e) => {
-            const file = e.target.files[0];
+        window.previewImagem = (input) => {
+            const file = input.files[0];
             if (file) {
-                document.getElementById('nomeArquivo').innerText = file.name;
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    fotoBase64 = event.target.result; // Aqui vira texto!
+                reader.onload = (e) => {
+                    fotoBase64 = e.target.result;
                     document.getElementById('imgPreview').src = fotoBase64;
-                    document.getElementById('previewArea').classList.remove('hidden');
+                    document.getElementById('previewContainer').classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);
             }
-        });
-
-        window.limparFoto = () => {
-            fotoBase64 = "";
-            input.value = "";
-            document.getElementById('previewArea').classList.add('hidden');
-            document.getElementById('nomeArquivo').innerText = "Nenhum arquivo...";
         };
 
-        // Postar (Tudo vai pro Firestore como texto)
+        // POSTAR LOG (COM CAMPO CONCLUÍDO)
         window.postar = async () => {
-            const texto = document.getElementById('textoPost').value;
+            const texto = document.getElementById('texto').value;
+            const btn = document.getElementById('btnPostar');
+
             if (!texto && !fotoBase64) return;
 
-            const btn = document.getElementById('btnPostar');
-            btn.disabled = true; btn.innerText = "Sincronizando...";
+            btn.innerText = "Enviando...";
+            btn.disabled = true;
 
             try {
                 await addDoc(collection(db, "feed"), {
                     mensagem: texto,
-                    imagem: fotoBase64, // O "texto" da imagem vai aqui
-                    data: serverTimestamp()
+                    imagem: fotoBase64,
+                    data: serverTimestamp(),
+                    concluido: false // Novo campo para o Check-in
                 });
-                document.getElementById('textoPost').value = "";
-                limparFoto();
-            } catch (e) { alert("Erro ao postar! Tente uma imagem menor (print)."); }
-            
-            btn.disabled = false; btn.innerText = "Publicar Agora 🚀";
+                document.getElementById('texto').value = "";
+                document.getElementById('previewContainer').classList.add('hidden');
+                fotoBase64 = "";
+            } catch (e) {
+                alert("Erro ao publicar.");
+            } finally {
+                btn.innerText = "Publicar";
+                btn.disabled = false;
+            }
         };
 
-        // Excluir
+        // EXCLUIR LOG
         window.excluir = async (id) => {
-            if (confirm("Deseja apagar esse treinamento?")) await deleteDoc(doc(db, "feed", id));
+            if (confirm("Deseja apagar este registro?")) await deleteDoc(doc(db, "feed", id));
         };
 
-        // Feed em Tempo Real
+        // ALTERAR STATUS DE CONCLUSÃO (CHECK-IN)
+        window.toggleCheck = async (id, statusAtual) => {
+            try {
+                await updateDoc(doc(db, "feed", id), {
+                    concluido: !statusAtual
+                });
+            } catch (e) {
+                console.error("Erro ao atualizar status:", e);
+            }
+        };
+
+        // RENDERIZAÇÃO DA TIMELINE EM TEMPO REAL
         const q = query(collection(db, "feed"), orderBy("data", "desc"));
         onSnapshot(q, (snap) => {
             const feedDiv = document.getElementById('feed');
             feedDiv.innerHTML = "";
+            
             snap.forEach((d) => {
                 const p = d.data();
+                const dataFormatada = p.data ? new Date(p.data.toDate()).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : 'Agora';
+                
                 const card = `
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg group">
-                        <div class="flex justify-between mb-3">
-                            <span class="text-[9px] text-slate-600 font-bold uppercase tracking-tighter">Cosmo Feed</span>
-                            <button onclick="excluir('${d.id}')" class="text-slate-800 group-hover:text-red-500 transition-all text-xs">🗑️</button>
+                    <div class="relative pl-12 group">
+                        <div class="absolute left-[12px] top-2 w-3 h-3 rounded-full border-2 transition-all z-10 
+                            ${p.concluido ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]' : 'bg-slate-950 border-slate-700'}"></div>
+                        
+                        <div class="bg-slate-900 border ${p.concluido ? 'border-indigo-500/20' : 'border-slate-800'} p-6 rounded-3xl backdrop-blur-sm transition-all shadow-xl">
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox" ${p.concluido ? 'checked' : ''} 
+                                           onclick="toggleCheck('${d.id}', ${p.concluido})"
+                                           class="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500 cursor-pointer transition-all">
+                                    <span class="text-[10px] font-mono text-slate-500 uppercase tracking-tighter">${dataFormatada} • LOG</span>
+                                </div>
+                                <button onclick="excluir('${d.id}')" class="text-slate-800 hover:text-red-500 transition-colors">🗑️</button>
+                            </div>
+
+                            ${p.imagem ? `<img src="${p.imagem}" class="w-full rounded-2xl mb-4 border border-slate-800 ${p.concluido ? 'grayscale opacity-30' : ''} transition-all shadow-inner">` : ''}
+                            
+                            <p class="text-sm leading-relaxed ${p.concluido ? 'text-slate-500 line-through' : 'text-slate-200'}">
+                                ${p.mensagem}
+                            </p>
                         </div>
-                        ${p.imagem ? `<img src="${p.imagem}" class="w-full rounded-2xl mb-4 border border-slate-800">` : ''}
-                        <p class="text-slate-200 text-sm leading-relaxed">${p.mensagem}</p>
                     </div>
                 `;
                 feedDiv.innerHTML += card;
             });
-            if(snap.empty) feedDiv.innerHTML = "<p class='text-center text-slate-700 text-xs'>Nenhum post ainda.</p>";
         });
     </script>
 </body>
