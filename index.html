@@ -68,11 +68,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // VERIFICAÇÃO DE LOGIN
-        onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = "login.html";
-        });
-
         window.sair = () => signOut(auth);
 
         // LÓGICA DE IMAGEM
@@ -105,7 +100,7 @@
                     mensagem: texto,
                     imagem: fotoBase64,
                     data: serverTimestamp(),
-                    concluido: false // Novo campo para o Check-in
+                    concluido: false
                 });
                 document.getElementById('texto').value = "";
                 document.getElementById('previewContainer').classList.add('hidden');
@@ -134,41 +129,49 @@
             }
         };
 
-        // RENDERIZAÇÃO DA TIMELINE EM TEMPO REAL
-        const q = query(collection(db, "feed"), orderBy("data", "desc"));
-        onSnapshot(q, (snap) => {
-            const feedDiv = document.getElementById('feed');
-            feedDiv.innerHTML = "";
-            
-            snap.forEach((d) => {
-                const p = d.data();
-                const dataFormatada = p.data ? new Date(p.data.toDate()).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : 'Agora';
-                
-                const card = `
-                    <div class="relative pl-12 group">
-                        <div class="absolute left-[12px] top-2 w-3 h-3 rounded-full border-2 transition-all z-10 
-                            ${p.concluido ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]' : 'bg-slate-950 border-slate-700'}"></div>
-                        
-                        <div class="bg-slate-900 border ${p.concluido ? 'border-indigo-500/20' : 'border-slate-800'} p-6 rounded-3xl backdrop-blur-sm transition-all shadow-xl">
-                            <div class="flex justify-between items-center mb-4">
-                                <div class="flex items-center gap-3">
-                                    <input type="checkbox" ${p.concluido ? 'checked' : ''} 
-                                           onclick="toggleCheck('${d.id}', ${p.concluido})"
-                                           class="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500 cursor-pointer transition-all">
-                                    <span class="text-[10px] font-mono text-slate-500 uppercase tracking-tighter">${dataFormatada} • LOG</span>
-                                </div>
-                                <button onclick="excluir('${d.id}')" class="text-slate-800 hover:text-red-500 transition-colors">🗑️</button>
-                            </div>
+        // VERIFICAÇÃO DE LOGIN — inicia o Firestore apenas após confirmar autenticação
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
 
-                            ${p.imagem ? `<img src="${p.imagem}" class="w-full rounded-2xl mb-4 border border-slate-800 ${p.concluido ? 'grayscale opacity-30' : ''} transition-all shadow-inner">` : ''}
-                            
-                            <p class="text-sm leading-relaxed ${p.concluido ? 'text-slate-500 line-through' : 'text-slate-200'}">
-                                ${p.mensagem}
-                            </p>
+            // RENDERIZAÇÃO DA TIMELINE EM TEMPO REAL
+            const q = query(collection(db, "feed"), orderBy("data", "desc"));
+            onSnapshot(q, (snap) => {
+                const feedDiv = document.getElementById('feed');
+                feedDiv.innerHTML = "";
+
+                snap.forEach((d) => {
+                    const p = d.data();
+                    const dataFormatada = p.data ? new Date(p.data.toDate()).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : 'Agora';
+
+                    const card = `
+                        <div class="relative pl-12 group">
+                            <div class="absolute left-[12px] top-2 w-3 h-3 rounded-full border-2 transition-all z-10
+                                ${p.concluido ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.6)]' : 'bg-slate-950 border-slate-700'}"></div>
+
+                            <div class="bg-slate-900 border ${p.concluido ? 'border-indigo-500/20' : 'border-slate-800'} p-6 rounded-3xl backdrop-blur-sm transition-all shadow-xl">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" ${p.concluido ? 'checked' : ''}
+                                               onclick="toggleCheck('${d.id}', ${p.concluido})"
+                                               class="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500 cursor-pointer transition-all">
+                                        <span class="text-[10px] font-mono text-slate-500 uppercase tracking-tighter">${dataFormatada} • LOG</span>
+                                    </div>
+                                    <button onclick="excluir('${d.id}')" class="text-slate-800 hover:text-red-500 transition-colors">🗑️</button>
+                                </div>
+
+                                ${p.imagem ? `<img src="${p.imagem}" class="w-full rounded-2xl mb-4 border border-slate-800 ${p.concluido ? 'grayscale opacity-30' : ''} transition-all shadow-inner">` : ''}
+
+                                <p class="text-sm leading-relaxed ${p.concluido ? 'text-slate-500 line-through' : 'text-slate-200'}">
+                                    ${p.mensagem}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                `;
-                feedDiv.innerHTML += card;
+                    `;
+                    feedDiv.innerHTML += card;
+                });
             });
         });
     </script>
