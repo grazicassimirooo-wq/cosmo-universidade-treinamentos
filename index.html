@@ -129,9 +129,9 @@
             }
         };
 
-        // VERIFICAÇÃO DE LOGIN — inicia o Firestore apenas após confirmar autenticação
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
+        // Aguarda o Firebase resolver o estado de autenticação antes de agir
+        auth.authStateReady().then(() => {
+            if (!auth.currentUser) {
                 window.location.href = "login.html";
                 return;
             }
@@ -172,6 +172,11 @@
                     `;
                     feedDiv.innerHTML += card;
                 });
+            });
+
+            // Monitora logout após inicialização
+            onAuthStateChanged(auth, (user) => {
+                if (!user) window.location.href = "login.html";
             });
         });
     </script>
